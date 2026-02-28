@@ -68,10 +68,11 @@ if user_file and dress_file:
                   instead of saying it looks 'bad'.
                 
                 Format your response as follows:
-                [IMAGE]
                 (The generated image goes here)
-                [ANALYSIS]
+                [IMAGE]
+
                 (Your polite styling text goes here)
+                [NOTES]
                 """
                 
                 # Optional: Control the length of the stylist's note
@@ -84,6 +85,7 @@ if user_file and dress_file:
                 # We specifically look for image data and text data separately
                 result_image = None
                 stylist_note = ""
+                clean_note = ""
 
                 for part in response.candidates[0].content.parts:
                     if hasattr(part, 'inline_data') and part.inline_data:
@@ -102,7 +104,7 @@ if user_file and dress_file:
                     st.subheader("✨ Stylist's Note")
                     # Cleaning up the [ANALYSIS] tags if the model included them
                     clean_note = stylist_note.replace("[ANALYSIS]", "").strip()
-                    clean_note = clean_note.replace("[IMAGE]", "").strip()
+                    clean_note = clean_note.replace("[NOTES]", "").strip()
                     st.info(clean_note)
                 else:
                     st.warning("The Stylist was shy this time! No notes were generated.")
