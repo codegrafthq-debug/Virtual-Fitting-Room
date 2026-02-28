@@ -77,7 +77,7 @@ if user_file and dress_file:
                 # Optional: Control the length of the stylist's note
                 response = model.generate_content(
                     [prompt, user_img, dress_img],
-                    generation_config={"max_output_tokens": 1000} # Allows room for image + text
+                    generation_config={"max_output_tokens": 2000} # Allows room for image + text
                 )
                 
                 # --- Revised Display Logic ---
@@ -102,6 +102,7 @@ if user_file and dress_file:
                     st.subheader("✨ Stylist's Note")
                     # Cleaning up the [ANALYSIS] tags if the model included them
                     clean_note = stylist_note.replace("[ANALYSIS]", "").strip()
+                    clean_note = clean_note.replace("[IMAGE]", "").strip()
                     st.info(clean_note)
                 else:
                     st.warning("The Stylist was shy this time! No notes were generated.")
