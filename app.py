@@ -53,45 +53,45 @@ if user_file and dress_file:
                 # Construct the prompt for the model
                 # Inside your 'if st.button("Generate Try-On")' block:
 
-            prompt = """
-            You are an expert, polite, and encouraging AI Fashion Stylist.
-            1. Generate a high-fidelity virtual try-on image where the person from Image 1 
-               is wearing the outfit from Image 2. 
-            2. Preserve the person's original body shape, height, and facial features perfectly.
-            3. Below the image, provide a brief (2-3 sentence) polite fashion analysis.
-            
-            Styling Analysis Guidelines:
-            - Analyze how the outfit's color interacts with their skin tone.
-            - Comment on how the silhouette complements their specific body shape and height.
-            - Be supportive and kind. If something doesn't match perfectly, suggest a 
-              small accessory or adjustment (e.g., 'adding a belt' or 'different shoes') 
-              instead of saying it looks 'bad'.
-            
-            Format your response as follows:
-            [IMAGE]
-            (The generated image goes here)
-            [ANALYSIS]
-            (Your polite styling text goes here)
-            """
-            
-            # Optional: Control the length of the stylist's note
-            response = model.generate_content(
-                [prompt, p_img, d_img],
-                generation_config={"max_output_tokens": 1000} # Allows room for image + text
-            )
-            
-            # --- Display Logic ---
-            # Nano Banana 2 responses contain 'parts'. 
-            # Usually, the image is one part and the text is another.
-            for part in response.candidates[0].content.parts:
-                if part.inline_data: # This is the Image
-                    st.image(part.inline_data.data, caption="Your New Look", use_container_width=True)
-                elif part.text: # This is the Styling Advice
-                    st.subheader("✨ Stylist's Note")
-                    st.info(part.text)
-                            
+                prompt = """
+                You are an expert, polite, and encouraging AI Fashion Stylist.
+                1. Generate a high-fidelity virtual try-on image where the person from Image 1 
+                   is wearing the outfit from Image 2. 
+                2. Preserve the person's original body shape, height, and facial features perfectly.
+                3. Below the image, provide a brief (2-3 sentence) polite fashion analysis.
                 
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+                Styling Analysis Guidelines:
+                - Analyze how the outfit's color interacts with their skin tone.
+                - Comment on how the silhouette complements their specific body shape and height.
+                - Be supportive and kind. If something doesn't match perfectly, suggest a 
+                  small accessory or adjustment (e.g., 'adding a belt' or 'different shoes') 
+                  instead of saying it looks 'bad'.
+                
+                Format your response as follows:
+                [IMAGE]
+                (The generated image goes here)
+                [ANALYSIS]
+                (Your polite styling text goes here)
+                """
+                
+                # Optional: Control the length of the stylist's note
+                response = model.generate_content(
+                    [prompt, p_img, d_img],
+                    generation_config={"max_output_tokens": 1000} # Allows room for image + text
+                )
+                
+                # --- Display Logic ---
+                # Nano Banana 2 responses contain 'parts'. 
+                # Usually, the image is one part and the text is another.
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data: # This is the Image
+                        st.image(part.inline_data.data, caption="Your New Look", use_container_width=True)
+                    elif part.text: # This is the Styling Advice
+                        st.subheader("✨ Stylist's Note")
+                        st.info(part.text)
+                                
+                    
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
 else:
     st.info("Please upload both images above to enable the 'Generate' button.")
