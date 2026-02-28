@@ -4,7 +4,7 @@ from PIL import Image
 import os
 
 # 1. Page Configuration
-st.set_page_config(page_title="Nano Banana Virtual Try-On", layout="wide")
+st.set_page_config(page_title="Virtual Try-On", layout="wide")
 
 # 2. Secure API Key Loading
 # Make sure you've added 'GEMINI_API_KEY' to your Streamlit Cloud Secrets!
@@ -18,7 +18,7 @@ else:
 model = genai.GenerativeModel('gemini-3.1-flash-image')
 
 # --- UI Header ---
-st.title("👗 Nano Banana: AI Virtual Fitting Room")
+st.title("👗Virtual Fitting Room")
 st.write("Upload your photo and a garment to see how it looks on you.")
 
 # --- Step 1: User Inputs ---
