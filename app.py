@@ -51,38 +51,45 @@ if user_file and dress_file:
         with st.spinner("Analyzing fit and fabric... This takes about 10-15 seconds."):
             try:
                 # Construct the prompt for the model
-                prompt = """
-                ACT AS: A high-end digital tailor and fashion photographer.
-                
-                INPUT DATA:
-                - Image 1 is the TARGET PERSON.
-                - Image 2 is the SOURCE GARMENT.
-                
-                TASK: 
-                Perform a seamless virtual try-on. Render a photo of the TARGET PERSON from Image 1 
-                wearing the outfit from Image 2.
-                
-                STRICT CONSTRAINTS (DO NOT OVERFIT):
-                1. BODY FIDELITY: You MUST preserve the exact body shape, height, curves, and proportions 
-                   of the person in Image 1. Do not swap their body for a generic model.
-                2. IDENTITY PRESERVATION: Keep all facial features, hair, and skin tones 100% identical 
-                   to Image 1.
-                3. FABRIC PHYSICS: Drap the garment from Image 2 onto the body from Image 1. The fabric 
-                   should fold and stretch naturally according to the person's unique pose and anatomy.
-                4. LIGHTING: Ensure the lighting on the dress matches the ambient lighting of the 
-                   person's original photo.
-                
-                NEGATIVE PROMPT: 
-                Do not alter the person's weight. Do not change the person's face. Do not 
-                distort the original body silhouette.
-                """
-                
-                # Send both images and the prompt to Nano Banana
-                response = model.generate_content([prompt, user_img, dress_img])
-                
-                # Display the result
-                st.subheader("Result: Your New Look")
-                st.image(response.candidates[0].content.parts[0].inline_data.data, use_container_width=True)
+                # Inside your 'if st.button("Generate Try-On")' block:
+
+            prompt = """
+            You are an expert, polite, and encouraging AI Fashion Stylist.
+            1. Generate a high-fidelity virtual try-on image where the person from Image 1 
+               is wearing the outfit from Image 2. 
+            2. Preserve the person's original body shape, height, and facial features perfectly.
+            3. Below the image, provide a brief (2-3 sentence) polite fashion analysis.
+            
+            Styling Analysis Guidelines:
+            - Analyze how the outfit's color interacts with their skin tone.
+            - Comment on how the silhouette complements their specific body shape and height.
+            - Be supportive and kind. If something doesn't match perfectly, suggest a 
+              small accessory or adjustment (e.g., 'adding a belt' or 'different shoes') 
+              instead of saying it looks 'bad'.
+            
+            Format your response as follows:
+            [IMAGE]
+            (The generated image goes here)
+            [ANALYSIS]
+            (Your polite styling text goes here)
+            """
+            
+            # Optional: Control the length of the stylist's note
+            response = model.generate_content(
+                [prompt, p_img, d_img],
+                generation_config={"max_output_tokens": 1000} # Allows room for image + text
+            )
+            
+            # --- Display Logic ---
+            # Nano Banana 2 responses contain 'parts'. 
+            # Usually, the image is one part and the text is another.
+            for part in response.candidates[0].content.parts:
+                if part.inline_data: # This is the Image
+                    st.image(part.inline_data.data, caption="Your New Look", use_container_width=True)
+                elif part.text: # This is the Styling Advice
+                    st.subheader("✨ Stylist's Note")
+                    st.info(part.text)
+                            
                 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
