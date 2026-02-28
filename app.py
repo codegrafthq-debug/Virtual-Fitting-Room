@@ -23,7 +23,7 @@ model = genai.GenerativeModel(
 )
 
 # --- UI Header ---
-st.title("👗Virtual Fitting Room v1.1.1")
+st.title("👗Virtual Fitting Room v1.1.2")
 st.write("Upload your photo and a garment to see how it looks on you.")
 
 # --- Step 1: User Inputs ---
@@ -80,15 +80,31 @@ if user_file and dress_file:
                     generation_config={"max_output_tokens": 1000} # Allows room for image + text
                 )
                 
-                # --- Display Logic ---
-                # Nano Banana 2 responses contain 'parts'. 
-                # Usually, the image is one part and the text is another.
+                # --- Revised Display Logic ---
+                # We specifically look for image data and text data separately
+                result_image = None
+                stylist_note = ""
+
                 for part in response.candidates[0].content.parts:
-                    if part.inline_data: # This is the Image
-                        st.image(part.inline_data.data, caption="Your New Look", use_container_width=True)
-                    elif part.text: # This is the Styling Advice
-                        st.subheader("✨ Stylist's Note")
-                        st.info(part.text)
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        result_image = part.inline_data.data
+                    elif hasattr(part, 'text') and part.text:
+                        stylist_note += part.text
+
+                # Display the Image if found
+                if result_image:
+                    st.image(result_image, caption="Your New Look", use_container_width=True)
+                else:
+                    st.warning("The AI didn't return an image. Try adjusting your prompt.")
+
+                # Display the Stylist's Note if found
+                if stylist_note:
+                    st.subheader("✨ Stylist's Note")
+                    # Cleaning up the [ANALYSIS] tags if the model included them
+                    clean_note = stylist_note.replace("[ANALYSIS]", "").strip()
+                    st.info(clean_note)
+                else:
+                    st.warning("The Stylist was shy this time! No notes were generated.")
                                 
                     
             except Exception as e:
