@@ -23,7 +23,7 @@ model = genai.GenerativeModel(
 )
 
 # --- UI Header ---
-st.title("👗Virtual Fitting Room v1.1")
+st.title("👗Virtual Fitting Room v1.1.1")
 st.write("Upload your photo and a garment to see how it looks on you.")
 
 # --- Step 1: User Inputs ---
@@ -76,7 +76,7 @@ if user_file and dress_file:
                 
                 # Optional: Control the length of the stylist's note
                 response = model.generate_content(
-                    [prompt, p_img, d_img],
+                    [prompt, user_img, dress_img],
                     generation_config={"max_output_tokens": 1000} # Allows room for image + text
                 )
                 
