@@ -91,7 +91,7 @@ if user_file and dress_file:
                         st.info(part.text)
                                 
                     
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
 else:
     st.info("Please upload both images above to enable the 'Generate' button.")
