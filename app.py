@@ -7,15 +7,20 @@ import os
 st.set_page_config(page_title="Virtual Try-On", layout="wide")
 
 # 2. Secure API Key Loading
-# Make sure you've added 'GEMINI_API_KEY' to your Streamlit Cloud Secrets!
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
     st.error("Missing API Key! Please add 'GEMINI_API_KEY' to your Streamlit Secrets.")
     st.stop()
 
-# 3. Initialize the Model (Nano Banana 2 / Gemini 3.1 Flash Image)
-model = genai.GenerativeModel('gemini-3.1-flash-image-preview')
+# 3. Initialize the Model ( Gemini 3.1 Flash Image)
+model = genai.GenerativeModel(
+    model_name='gemini-3.1-flash-image-preview',
+    generation_config={
+        "temperature": 0.4, # Lowering this reduces "creative" body changes
+        "top_p": 0.9,
+    }
+)
 
 # --- UI Header ---
 st.title("👗Virtual Fitting Room")
@@ -47,17 +52,29 @@ if user_file and dress_file:
             try:
                 # Construct the prompt for the model
                 prompt = """
-                Task: Virtual Try-On.
-                Inputs: 
-                - Image 1: A person.
-                - Image 2: A garment/outfit.
-                Output: Generate a high-resolution, realistic photo of the person from Image 1 
-                wearing the exact outfit from Image 2. 
-                Requirements:
-                - Maintain the person's facial features, body shape, and pose.
-                - Wrap the clothing realistically around the body contours.
-                - Match the lighting and shadows of the person's environment.
-                - High fidelity, no artifacts.
+                ACT AS: A high-end digital tailor and fashion photographer.
+                
+                INPUT DATA:
+                - Image 1 is the TARGET PERSON.
+                - Image 2 is the SOURCE GARMENT.
+                
+                TASK: 
+                Perform a seamless virtual try-on. Render a photo of the TARGET PERSON from Image 1 
+                wearing the outfit from Image 2.
+                
+                STRICT CONSTRAINTS (DO NOT OVERFIT):
+                1. BODY FIDELITY: You MUST preserve the exact body shape, height, curves, and proportions 
+                   of the person in Image 1. Do not swap their body for a generic model.
+                2. IDENTITY PRESERVATION: Keep all facial features, hair, and skin tones 100% identical 
+                   to Image 1.
+                3. FABRIC PHYSICS: Drap the garment from Image 2 onto the body from Image 1. The fabric 
+                   should fold and stretch naturally according to the person's unique pose and anatomy.
+                4. LIGHTING: Ensure the lighting on the dress matches the ambient lighting of the 
+                   person's original photo.
+                
+                NEGATIVE PROMPT: 
+                Do not alter the person's weight. Do not change the person's face. Do not 
+                distort the original body silhouette.
                 """
                 
                 # Send both images and the prompt to Nano Banana
