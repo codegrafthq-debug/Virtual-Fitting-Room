@@ -15,7 +15,7 @@ else:
     st.stop()
 
 # 3. Initialize the Model (Nano Banana 2 / Gemini 3.1 Flash Image)
-model = genai.GenerativeModel('gemini-3.1-flash-image')
+model = genai.GenerativeModel('gemini-3.1-flash-image-preview')
 
 # --- UI Header ---
 st.title("👗Virtual Fitting Room")
