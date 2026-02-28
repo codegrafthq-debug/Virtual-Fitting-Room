@@ -23,7 +23,7 @@ model = genai.GenerativeModel(
 )
 
 # --- UI Header ---
-st.title("👗Virtual Fitting Room")
+st.title("👗Virtual Fitting Room v1.1")
 st.write("Upload your photo and a garment to see how it looks on you.")
 
 # --- Step 1: User Inputs ---
