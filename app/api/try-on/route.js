@@ -24,9 +24,9 @@ export async function POST(request) {
     const outfitBase64 = Buffer.from(outfitBuffer).toString('base64');
 
     /* =========================================================
-       STEP 1: The Vision Prompt (Gemini 1.5 Flash)
+       STEP 1: The Vision Prompt (Gemini 2.5 Flash)
        ========================================================= */
-    const visionResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+    const visionResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
