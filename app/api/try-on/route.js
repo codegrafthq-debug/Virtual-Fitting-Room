@@ -1,5 +1,6 @@
 export async function POST(request) {
   try {
+    const maxDuration = 120; // Sets timeout to 60 seconds
     const formData = await request.formData();
     const userPhoto = formData.get('userPhoto');
     const outfitPhoto = formData.get('outfitPhoto');
