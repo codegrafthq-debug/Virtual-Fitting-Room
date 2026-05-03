@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-// Set a longer timeout for image generation
 export const maxDuration = 60; 
 
 export async function POST(request) {
@@ -15,7 +14,6 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "Missing API Key." }, { status: 500 });
     }
 
-    // Convert blobs to Base64 strings
     const [userBuffer, outfitBuffer] = await Promise.all([
       userPhoto.arrayBuffer(),
       outfitPhoto.arrayBuffer(),
@@ -24,7 +22,6 @@ export async function POST(request) {
     const userBase64 = Buffer.from(userBuffer).toString('base64');
     const outfitBase64 = Buffer.from(outfitBuffer).toString('base64');
 
-    // Call the Gemini 3 Pro Image model
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key=${API_KEY}`,
       {
@@ -35,7 +32,8 @@ export async function POST(request) {
             {
               parts: [
                 { 
-                  text: "Task: Virtual clothing try-on. Image 1 is the person. Image 2 is the clothing item. Generate a photorealistic image of the person from Image 1 wearing the exact clothing from Image 2. Maintain the person's body shape, face, and pose. Ensure the fabric drapes realistically with natural lighting and shadows." 
+                  // I've added the aspect ratio request directly into the prompt text
+                  text: "Virtual Try-On Task: Generate a high-resolution, photorealistic 3:4 portrait of the person in Image 1 wearing the exact clothing shown in Image 2. Maintain the person's identity and body shape. The fabric should drape naturally with realistic folds." 
                 },
                 { inline_data: { mime_type: userPhoto.type, data: userBase64 } },
                 { inline_data: { mime_type: outfitPhoto.type, data: outfitBase64 } }
@@ -43,21 +41,21 @@ export async function POST(request) {
             }
           ],
           generationConfig: {
-            sampleCount: 1,
-            aspectRatio: "3:4"
+            // "candidateCount" is the correct name for "sampleCount" in Gemini 3
+            candidateCount: 1
           }
-        }
-      )
-    });
+        })
+      }
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Gemini Error:", data);
+      console.error("Gemini Error:", JSON.stringify(data, null, 2));
       return NextResponse.json({ success: false, error: data.error?.message || "Generation failed" }, { status: 400 });
     }
 
-    // Extract the generated image data
+    // Extracting the image from the response candidates
     const resultBase64 = data.candidates[0].content.parts[0].inline_data.data;
     
     return NextResponse.json({ 
@@ -66,6 +64,7 @@ export async function POST(request) {
     });
 
   } catch (err) {
+    console.error("Server Error:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
