@@ -1,7 +1,3 @@
-import { NextResponse } from 'next/server';
-
-export const maxDuration = 60; 
-
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -9,10 +5,6 @@ export async function POST(request) {
     const outfitPhoto = formData.get('outfitPhoto');
 
     const API_KEY = process.env.VITE_GEMINI_API_KEY;
-
-    if (!API_KEY) {
-      return NextResponse.json({ success: false, error: "Missing API Key." }, { status: 500 });
-    }
 
     const [userBuffer, outfitBuffer] = await Promise.all([
       userPhoto.arrayBuffer(),
@@ -31,18 +23,20 @@ export async function POST(request) {
           contents: [
             {
               parts: [
-                { 
-                  // I've added the aspect ratio request directly into the prompt text
-                  text: "Virtual Try-On Task: Generate a high-resolution, photorealistic 3:4 portrait of the person in Image 1 wearing the exact clothing shown in Image 2. Maintain the person's identity and body shape. The fabric should drape naturally with realistic folds." 
-                },
+                { text: "Virtual Try-On Task: Generate a photo of the person in the first image wearing the exact outfit from the second image. High resolution, photorealistic." },
                 { inline_data: { mime_type: userPhoto.type, data: userBase64 } },
                 { inline_data: { mime_type: outfitPhoto.type, data: outfitBase64 } }
               ]
             }
           ],
-          generationConfig: {
-            // "candidateCount" is the correct name for "sampleCount" in Gemini 3
-            candidateCount: 1
+          generation_config: {
+            response_modalities: ["TEXT", "IMAGE"], // REQUIRED for image output
+            candidate_count: 1,
+            // You can specify the aspect ratio and resolution here instead of just text
+            image_config: {
+                aspect_ratio: "3:4",
+                image_size: "1K" // Options: 0.5K, 1K, 2K, 4K
+            }
           }
         })
       }
@@ -51,12 +45,19 @@ export async function POST(request) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Gemini Error:", JSON.stringify(data, null, 2));
+      console.error("Gemini Error:", data);
       return NextResponse.json({ success: false, error: data.error?.message || "Generation failed" }, { status: 400 });
     }
 
-    // Extracting the image from the response candidates
-    const resultBase64 = data.candidates[0].content.parts[0].inline_data.data;
+    // SAFE EXTRACTION: Look for the part that actually contains inline_data (the image)
+    const candidates = data.candidates?.[0]?.content?.parts || [];
+    const imagePart = candidates.find(part => part.inline_data);
+    
+    if (!imagePart) {
+        return NextResponse.json({ success: false, error: "Model didn't return an image." }, { status: 500 });
+    }
+
+    const resultBase64 = imagePart.inline_data.data;
     
     return NextResponse.json({ 
       success: true, 
@@ -64,7 +65,6 @@ export async function POST(request) {
     });
 
   } catch (err) {
-    console.error("Server Error:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
