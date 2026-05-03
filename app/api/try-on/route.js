@@ -14,6 +14,7 @@ export async function POST(request) {
     
     const userBase64 = Buffer.from(userBuffer).toString('base64');
     const outfitBase64 = Buffer.from(outfitBuffer).toString('base64');
+    console.log("Calling URL:", `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${API_KEY ? 'EXISTS' : 'MISSING'}`);
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${API_KEY}`,
