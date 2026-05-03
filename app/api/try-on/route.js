@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+// Set a longer timeout for image generation
 export const maxDuration = 60; 
 
 export async function POST(request) {
@@ -11,63 +12,60 @@ export async function POST(request) {
     const API_KEY = process.env.VITE_GEMINI_API_KEY;
 
     if (!API_KEY) {
-      return NextResponse.json({ success: false, error: "API Key missing." }, { status: 500 });
+      return NextResponse.json({ success: false, error: "Missing API Key." }, { status: 500 });
     }
 
-    // Convert images to Base64
-    const userBuffer = await userPhoto.arrayBuffer();
-    const outfitBuffer = await outfitPhoto.arrayBuffer();
+    // Convert blobs to Base64 strings
+    const [userBuffer, outfitBuffer] = await Promise.all([
+      userPhoto.arrayBuffer(),
+      outfitPhoto.arrayBuffer(),
+    ]);
     
     const userBase64 = Buffer.from(userBuffer).toString('base64');
     const outfitBase64 = Buffer.from(outfitBuffer).toString('base64');
 
-    // Imagen 3.0 Predict Call
-    const imageResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [
-          { 
-            prompt: "A professional full-body photograph of the person in [1] wearing the exact clothing from [2]. The person is standing in a modern living room. Maintain the person's physical features and drape the fabric naturally with realistic folds. High-resolution, photorealistic, cinematic lighting.",
-            referenceImages: [
-              {
-                referenceId: 1,
-                referenceType: "SUBJECT",
-                image: { mimeType: userPhoto.type, bytesBase64Encoded: userBase64 }
-              },
-              {
-                referenceId: 2,
-                referenceType: "SUBJECT",
-                image: { mimeType: outfitPhoto.type, bytesBase64Encoded: outfitBase64 }
-              }
-            ]
+    // Call the Gemini 3 Pro Image model
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { 
+                  text: "Task: Virtual clothing try-on. Image 1 is the person. Image 2 is the clothing item. Generate a photorealistic image of the person from Image 1 wearing the exact clothing from Image 2. Maintain the person's body shape, face, and pose. Ensure the fabric drapes realistically with natural lighting and shadows." 
+                },
+                { inline_data: { mime_type: userPhoto.type, data: userBase64 } },
+                { inline_data: { mime_type: outfitPhoto.type, data: outfitBase64 } }
+              ]
+            }
+          ],
+          generationConfig: {
+            sampleCount: 1,
+            aspectRatio: "3:4"
           }
-        ],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: "3:4"
         }
-      })
+      )
     });
 
-    const imageData = await imageResponse.json();
+    const data = await response.json();
 
-    if (!imageResponse.ok) {
-        console.error("API Error Response:", imageData);
-        throw new Error(imageData.error?.message || "Failed the image generation step");
+    if (!response.ok) {
+      console.error("Gemini Error:", data);
+      return NextResponse.json({ success: false, error: data.error?.message || "Generation failed" }, { status: 400 });
     }
 
-    // Extract the image
-    const resultBase64Bytes = imageData.predictions[0].bytesBase64Encoded;
-    const finalImageUrl = `data:image/jpeg;base64,${resultBase64Bytes}`;
-
+    // Extract the generated image data
+    const resultBase64 = data.candidates[0].content.parts[0].inline_data.data;
+    
     return NextResponse.json({ 
       success: true, 
-      resultUrl: finalImageUrl 
+      resultUrl: `data:image/jpeg;base64,${resultBase64}` 
     });
 
-  } catch (error) {
-    console.error("Gemini MVP Error:", error);
-    return NextResponse.json({ success: false, error: error.message || "Server error" }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
